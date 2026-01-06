@@ -16,6 +16,7 @@ from models.baselines import BaselineCNNTransformer, Baseline1DCNNTransformer
 from models.neurographt import NeuroGraphT
 from data.dataset import SleepEDFDataset, load_sleep_edf_dataset
 from utils.training import train_one_epoch, validate
+from utils.focal_loss import FocalLoss
 
 EXPERIMENTS = [
     ("CNN-Transformer", None, None),
@@ -138,15 +139,27 @@ def run_single_fold(
     
     training_config = config["training"]
     
-    # Weighted Cross-Entropy Loss
+    # Loss function selection
     class_weights = None
     if config.get("class_weights", {}).get("enabled", False):
         weights = config["class_weights"].get("weights", [1.0] * num_classes)
-        class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+        class_weights = weights  # Keep as list for FocalLoss
         if verbose and fold_id == 1:
-            print(f"  ⚖️  Class weights enabled: {weights}")
+            print(f"  ⚖️  Class weights: {weights}")
     
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    # Choose loss function
+    loss_fn = training_config.get("loss_function", "cross_entropy")
+    if loss_fn == "focal":
+        gamma = training_config.get("focal_gamma", 2.0)
+        criterion = FocalLoss(alpha=class_weights, gamma=gamma)
+        if verbose and fold_id == 1:
+            print(f"  🎯 Using Focal Loss (gamma={gamma})")
+    else:
+        weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device) if class_weights else None
+        criterion = nn.CrossEntropyLoss(weight=weights_tensor)
+        if verbose and fold_id == 1:
+            print(f"  📊 Using Cross-Entropy Loss")
+    
     optimizer = AdamW(
         model.parameters(), 
         lr=training_config["learning_rate"], 
@@ -390,7 +403,7 @@ def main():
         json.dump(all_results, f, indent=2, ensure_ascii=False)
     
     print(f"\n{'='*70}")
-    print(f"✅ Tüm deneyler tamamlandı! Sonuçlar '{args.output}' dosyasına kaydedildi.")
+    print(f"Tüm deneyler tamamlandı! Sonuçlar '{args.output}' dosyasına kaydedildi.")
     print(f"{'='*70}")
     
     # Karşılaştırma tablosu
