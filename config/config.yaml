@@ -53,13 +53,11 @@ training:
     warmup_epochs: 5
     min_lr: 0.00001
   
-  # Early stopping
   early_stopping:
     enabled: true
     patience: 20
     min_delta: 0.001
   
-  # Checkpoint
   checkpoint:
     save_best: true
     save_dir: "checkpoints"
@@ -69,6 +67,7 @@ class_weights:
   # Sleep stage class weights (W, N1, N2, N3, REM)
   # W: 69%, N1: 4.7%, N2: 16.6%, N3: 3.3%, REM: 6.4%
   weights: [1.0, 15.0, 4.0, 20.0, 12.0]
+  # [1.0, 10.0, 4.0, 12.0, 8.0] -> test edilecek
 
 evaluation:
   num_runs: 5
