@@ -5,7 +5,6 @@ from typing import List
 
 
 class PositionalEncoding(nn.Module):
-    # Sinüzoidal Pozisyonel Kodlama.
     
     def __init__(self, d_model: int, max_len: int = 5000, dropout: float = 0.1):
         super().__init__()

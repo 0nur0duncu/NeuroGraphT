@@ -62,16 +62,7 @@ def calculate_per_class_f1(
     y_pred: Union[np.ndarray, torch.Tensor],
     class_names: Optional[List[str]] = None
 ) -> Dict[str, float]:
-    """Calculate F1 score for each class.
-    
-    Args:
-        y_true: Ground truth labels
-        y_pred: Predicted labels
-        class_names: Optional list of class names. If None, uses numeric indices.
-        
-    Returns:
-        Dictionary mapping class names to F1 scores (in percentage)
-    """
+
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
     
