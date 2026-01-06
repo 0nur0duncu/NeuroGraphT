@@ -61,6 +61,8 @@ def main():
     model.train()
 
     num_epochs = train_config['num_epochs']
+    epoch_losses = []  # Training loss'ları kaydet
+    
     for epoch in range(num_epochs):
         epoch_loss = 0
         for batch_x, batch_y in train_loader:
@@ -73,6 +75,7 @@ def main():
             epoch_loss += loss.item()
 
         avg_loss = epoch_loss / len(train_loader)
+        epoch_losses.append(avg_loss)
         print(f"  Epoch {epoch+1}/{num_epochs} - Loss: {avg_loss:.4f}")
 
     print("\nTest ediliyor...")
@@ -106,6 +109,16 @@ def main():
     ax2.set_ylabel('Gerçek Sınıf', fontsize=12)
     ax2.set_title('Confusion Matrix (Normalize - %)', fontsize=14, fontweight='bold')
 
+    plt.tight_layout()
+    plt.show()
+
+    # Training Loss Grafiği
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, num_epochs + 1), epoch_losses, marker='o', linewidth=2, markersize=6)
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('Loss', fontsize=12)
+    plt.title('Training Loss - Epoch Bazında', fontsize=14, fontweight='bold')
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
 
@@ -181,6 +194,67 @@ def main():
     print(f"  Macro F1 Score:      {macro_f1:>6.2f}%")
     print(f"{'='*80}")
 
+    precisions = []
+    recalls = []
+    for i in range(len(stage_names)):
+        tp = cm[i, i]
+        fp = cm[:, i].sum() - tp
+        fn = cm[i, :].sum() - tp
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        precisions.append(precision * 100)
+        recalls.append(recall * 100)
+    
+    f1_scores_pct = [f * 100 for f in f1_scores]
+    
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    
+    x = np.arange(len(stage_names))
+    width = 0.25
+    
+    ax1.bar(x - width, precisions, width, label='Precision', color='#3498db', alpha=0.8)
+    ax1.bar(x, recalls, width, label='Recall', color='#e74c3c', alpha=0.8)
+    ax1.bar(x + width, f1_scores_pct, width, label='F1 Score', color='#2ecc71', alpha=0.8)
+    ax1.set_xlabel('Sleep Stages', fontsize=12)
+    ax1.set_ylabel('Score (%)', fontsize=12)
+    ax1.set_title('Sınıf Bazında Performance Metrikleri', fontsize=13, fontweight='bold')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(stage_names)
+    ax1.legend()
+    ax1.grid(axis='y', alpha=0.3)
+    ax1.set_ylim([0, 105])
+    
+    colors_pie = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6']
+    ax2.pie(class_counts, labels=stage_names, autopct='%1.1f%%', colors=colors_pie, startangle=90)
+    ax2.set_title('Training Set - Sınıf Dağılımı', fontsize=13, fontweight='bold')
+    
+    correct_per_class = [cm[i, i] for i in range(len(stage_names))]
+    wrong_per_class = [cm[i, :].sum() - cm[i, i] for i in range(len(stage_names))]
+    
+    ax3.bar(x, correct_per_class, width*1.5, label='Doğru Tahmin', color='#2ecc71', alpha=0.8)
+    ax3.bar(x, wrong_per_class, width*1.5, bottom=correct_per_class, label='Yanlış Tahmin', color='#e74c3c', alpha=0.8)
+    ax3.set_xlabel('Sleep Stages', fontsize=12)
+    ax3.set_ylabel('Örnek Sayısı', fontsize=12)
+    ax3.set_title('Sınıf Bazında Doğru/Yanlış Tahmin Dağılımı', fontsize=13, fontweight='bold')
+    ax3.set_xticks(x)
+    ax3.set_xticklabels(stage_names)
+    ax3.legend()
+    ax3.grid(axis='y', alpha=0.3)
+
+    colors_f1 = ['#2ecc71' if f > 70 else '#f39c12' if f > 50 else '#e74c3c' for f in f1_scores_pct]
+    bars = ax4.barh(stage_names, f1_scores_pct, color=colors_f1, alpha=0.8)
+    ax4.set_xlabel('F1 Score (%)', fontsize=12)
+    ax4.set_ylabel('Sleep Stages', fontsize=12)
+    ax4.set_title('Sınıf Bazında F1 Score Karşılaştırması', fontsize=13, fontweight='bold')
+    ax4.set_xlim([0, 105])
+    ax4.grid(axis='x', alpha=0.3)
+    
+    for i, (bar, score) in enumerate(zip(bars, f1_scores_pct)):
+        ax4.text(score + 1, i, f'{score:.1f}%', va='center', fontweight='bold')
+    
+    plt.tight_layout()
+    plt.show()
+
     checkpoint_dir = "checkpoints"
     os.makedirs(checkpoint_dir, exist_ok=True)
 
@@ -191,9 +265,9 @@ def main():
     checkpoint = {
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'class_weights': class_weights.numpy(),
+        'class_weights': class_weights.numpy() if class_weights is not None else None,
         'num_epochs': num_epochs,
-        'learning_rate': 0.0005,
+        'learning_rate': train_config['learning_rate'],
         'accuracy': accuracy,
         'macro_f1': macro_f1,
         'confusion_matrix': cm,
