@@ -1,0 +1,84 @@
+# Sleep-EDF Dataset Configuration
+# EpiGraphNet with Transformer for Sleep Stage Classification
+
+data:
+  data_dir: "dataset/sleep-edfx"  # Otomatik indirilir
+  study: "SC"  # SC (Sleep Cassette) veya ST (Sleep Telemetry)
+  channel: "EEG Fpz-Cz"  # EEG kanalı (Fpz-Cz veya Pz-Oz)
+  sampling_rate: 100  # Hz
+  epoch_duration: 30  # saniye (30s epoch)
+  # segment_length = sampling_rate * epoch_duration = 3000 sample
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  random_seed: 42
+  num_classes: 5  # W, N1, N2, N3, REM
+  max_subjects: null  # null = tüm özneler
+
+model:
+  # CNN Modülü
+  cnn:
+    in_channels: 1
+    conv_channels: [32, 64, 128]
+    kernel_sizes: [5, 5, 5]
+    pool_size: 2
+  
+  # Transformer Modülü (LSTM yerine)
+  transformer:
+    d_model: 128          # Model boyutu
+    num_heads: 8          # Attention head sayısı
+    num_layers: 4         # Transformer katman sayısı
+    d_ff: 512             # Feed-forward boyutu
+    max_seq_len: 100      # Maksimum sekans uzunluğu
+  
+  # Graf Yapısı
+  graph:
+    num_nodes: 16         # N - düğüm sayısı
+    sparsity: 25          # a - seyreklik parametresi
+    thresholding: "value" # "value" veya "connection"
+  
+  # GCN Modülü
+  gcn:
+    hidden_channels: 128
+    num_layers: 3
+  
+  dropout: 0.1
+
+training:
+  batch_size: 32  # 30s epoch'lar için daha küçük batch
+  num_epochs: 100
+  learning_rate: 0.0001  # Transformer için daha düşük LR
+  weight_decay: 0.0001
+  
+  # Learning rate scheduler
+  scheduler:
+    type: "cosine"  # Transformer için cosine annealing
+    warmup_epochs: 5
+    min_lr: 0.00001
+  
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 20
+    min_delta: 0.001
+  
+  # Checkpoint
+  checkpoint:
+    save_best: true
+    save_dir: "checkpoints"
+
+# Class weights for imbalanced data (optional)
+class_weights:
+  enabled: false
+  # Sleep stage class weights (W, N1, N2, N3, REM)
+  weights: [1.0, 2.0, 1.0, 1.5, 1.2]
+
+evaluation:
+  num_runs: 5
+  metrics: ["accuracy", "recall", "precision", "f1", "kappa"]
+  per_class_metrics: true
+
+logging:
+  log_dir: "logs"
+  tensorboard: true
+  print_every: 10
