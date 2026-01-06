@@ -13,17 +13,17 @@ from datetime import datetime
 from tqdm import tqdm
 
 from models.baselines import BaselineCNNTransformer, Baseline1DCNNTransformer
-from models.epigraphnet import EpiGraphNet
+from models.neurographt import NeuroGraphT
 from data.dataset import SleepEDFDataset, load_sleep_edf_dataset
 from utils.training import train_one_epoch, validate
 
 EXPERIMENTS = [
     ("CNN-Transformer", None, None),
     ("1D-CNN-Transformer", None, None),
-    ("EpiGraphNet", 50, "value"),
-    ("EpiGraphNet", 25, "value"),
-    ("EpiGraphNet", 50, "connection"),
-    ("EpiGraphNet", 25, "connection"),
+    ("NeuroGraphT", 50, "value"),
+    ("NeuroGraphT", 25, "value"),
+    ("NeuroGraphT", 50, "connection"),
+    ("NeuroGraphT", 25, "connection"),
 ]
 
 
@@ -76,8 +76,8 @@ def create_model(
             dropout=dropout
         )
     
-    elif model_type.startswith("EpiGraphNet"):
-        return EpiGraphNet(
+    elif model_type.startswith("NeuroGraphT"):
+        return NeuroGraphT(
             in_channels=1,
             conv_channels=[32, 64, 128],
             transformer_dim=transformer_dim,
@@ -365,9 +365,9 @@ def main():
     }
     
     for model_type, sparsity, thresholding in EXPERIMENTS:
-        if model_type == "EpiGraphNet":
+        if model_type == "NeuroGraphT":
             th_str = "DE" if thresholding == "value" else "BE"
-            model_name = f"EpiGraphNet_{th_str}(a={sparsity})"
+            model_name = f"NeuroGraphT_{th_str}(a={sparsity})"
         else:
             model_name = model_type
         

@@ -6,7 +6,7 @@
 1. [Proje Özeti](#proje-özeti)
 2. [Veri Seti ve Özellikleri](#veri-seti-ve-özellikleri)
 3. [Veri Seti: Sleep-EDF (Detaylı)](#veri-seti-sleep-edf-detaylı)
-4. [Model Mimarisi: EpiGraphNet](#model-mimarisi-epigraphnet)
+4. [Model Mimarisi: NeuroGraphT](#model-mimarisi-NeuroGraphT)
 5. [Veri İşleme Pipeline](#veri-i̇şleme-pipeline)
 6. [Eğitim ve Değerlendirme](#eğitim-ve-değerlendirme)
 7. [Karşılaştırmalı Deneyler](#karşılaştırmalı-deneyler)
@@ -24,7 +24,7 @@ EEG (Electroencephalogram) sinyallerinden uyku evrelerini otomatik olarak sını
 ### Yöntem
 **GNN ve Transformer Tabanlı Zamansal Kodlama:**
 
-Önerilen **EpiGraphNet** mimarisi üç ana bileşenden oluşur:
+Önerilen **NeuroGraphT** mimarisi üç ana bileşenden oluşur:
 
 1. **Temporal Feature Extraction (CNN-Transformer Encoder)**
    - **1D CNN Layers**: Ham EEG sinyallerinden lokal temporal pattern'ler çıkarır
@@ -397,11 +397,11 @@ test_loader = dataloaders['test']
 
 ---
 
-## 🏗️ Model Mimarisi: EpiGraphNet
+## 🏗️ Model Mimarisi: NeuroGraphT
 
 ### Genel Bakış
 
-**EpiGraphNet** üç ana bileşenden oluşur:
+**NeuroGraphT** üç ana bileşenden oluşur:
 
 ```
 Input EEG Signal (1, 3000)
@@ -707,7 +707,7 @@ logits = self.classifier(graph_embedding)  # (batch, 5)
 # Input
 x = torch.randn(8, 1, 3000)  # 8 epoch, 1 kanal, 3000 sample
 
-model = EpiGraphNet(
+model = NeuroGraphT(
     in_channels=1,
     conv_channels=[32, 64, 128],
     transformer_dim=128,
@@ -743,7 +743,7 @@ predictions = logits.argmax(dim=1)  # (8,) - Her epoch için tahmin
 
 ## 🔬 Baseline Modeller
 
-EpiGraphNet'in performansını karşılaştırmak için iki baseline model kullanılır. Her ikisi de **graf modülü içermez**, sadece CNN + Transformer kombinasyonudur.
+NeuroGraphT'in performansını karşılaştırmak için iki baseline model kullanılır. Her ikisi de **graf modülü içermez**, sadece CNN + Transformer kombinasyonudur.
 
 ### 1. BaselineCNNTransformer
 
@@ -1160,7 +1160,7 @@ Inference speed: 3x faster than BiLSTM
 | **SleepTransformer** | 2022 | Pure Transformer | 83.1% | 77.8% | 0.77 | 52.1% | 4.2M |
 | **L-SeqSleepNet** | 2023 | Hierarchical RNN | 83.4% | 78.2% | 0.78 | 53.8% | 5.1M |
 | **NeuroNet (SSL)** | 2024 | CNN-Transformer + SSL | **84.7%** | **80.5%** | **0.80** | **55.2%** | 3.8M |
-| **EpiGraphNet (Ours)** | 2026 | CNN-Transformer-GNN | **🎯 Target** | **🎯 Target** | **🎯 Target** | **🎯 Target** | ~4.5M |
+| **NeuroGraphT (Ours)** | 2026 | CNN-Transformer-GNN | **🎯 Target** | **🎯 Target** | **🎯 Target** | **🎯 Target** | ~4.5M |
 
 **Notlar:**
 - Tüm sonuçlar Sleep-EDF-20 (Fpz-Cz) üzerinde 5-class classification
@@ -1409,11 +1409,11 @@ EXPERIMENTS = [
     ("CNN-Transformer", None, None),
     ("1D-CNN-Transformer", None, None),
     
-    # EpiGraphNet varyasyonları
-    ("EpiGraphNet", 50, "value"),
-    ("EpiGraphNet", 25, "value"),
-    ("EpiGraphNet", 50, "connection"),
-    ("EpiGraphNet", 25, "connection"),
+    # NeuroGraphT varyasyonları
+    ("NeuroGraphT", 50, "value"),
+    ("NeuroGraphT", 25, "value"),
+    ("NeuroGraphT", 50, "connection"),
+    ("NeuroGraphT", 25, "connection"),
 ]
 ```
 
@@ -1422,10 +1422,10 @@ EXPERIMENTS = [
 | Model | Sparsity | Threshold | Node Count | Açıklama |
 |-------|----------|-----------|------------|----------|
 | Baseline | - | - | - | Graf yok |
-| EpiGraphNet-V50 | 50% | Value | 16 | Yoğun graf |
-| EpiGraphNet-V25 | 25% | Value | 16 | Seyrek graf |
-| EpiGraphNet-C50 | 50% | Connection | 16 | Her node'da 8 bağlantı |
-| EpiGraphNet-C25 | 25% | Connection | 16 | Her node'da 4 bağlantı |
+| NeuroGraphT-V50 | 50% | Value | 16 | Yoğun graf |
+| NeuroGraphT-V25 | 25% | Value | 16 | Seyrek graf |
+| NeuroGraphT-C50 | 50% | Connection | 16 | Her node'da 8 bağlantı |
+| NeuroGraphT-C25 | 25% | Connection | 16 | Her node'da 4 bağlantı |
 
 ### Çalıştırma
 
@@ -1462,7 +1462,7 @@ for model_name, metrics in results["experiments"].items():
 |------------|----------|----------|--------|
 | CNN-LSTM | ~78-82% | ~75-79% | Baseline |
 | CNN-Transformer | ~80-84% | ~77-81% | LSTM'den iyi |
-| **EpiGraphNet** | ~82-86% | ~79-83% | Graf ile artış |
+| **NeuroGraphT** | ~82-86% | ~79-83% | Graf ile artış |
 
 **Graf Modülünün Katkısı:**
 - ✅ +2-4% accuracy
@@ -1481,8 +1481,8 @@ from data.download import ensure_dataset
 data_path = ensure_dataset(verbose=True)
 
 # 2. Model oluştur
-from models import EpiGraphNet
-model = EpiGraphNet(num_classes=5)
+from models import NeuroGraphT
+model = NeuroGraphT(num_classes=5)
 
 # 3. Basit test
 import torch
@@ -1495,7 +1495,7 @@ print(output.shape)  # (2, 5)
 
 ```python
 from data import create_data_loaders
-from models import EpiGraphNet
+from models import NeuroGraphT
 import torch
 import torch.nn as nn
 
@@ -1508,7 +1508,7 @@ loaders = create_data_loaders(
 
 # Model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = EpiGraphNet(
+model = NeuroGraphT(
     num_classes=5,
     sparsity=25.0,
     thresholding="value"

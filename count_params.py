@@ -1,8 +1,8 @@
 import torch
-from models.epigraphnet import EpiGraphNet
+from models.neurographt import NeuroGraphT
 from models.baselines import BaselineCNNTransformer, Baseline1DCNNTransformer
 
-model = EpiGraphNet(
+model = NeuroGraphT(
     in_channels=1,
     conv_channels=[32, 64, 128],
     transformer_dim=128,

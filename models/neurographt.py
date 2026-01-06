@@ -198,7 +198,7 @@ class GCNEncoder(nn.Module):
         return x
 
 
-class EpiGraphNet(nn.Module):
+class NeuroGraphT(nn.Module):
     
     def __init__(
         self,

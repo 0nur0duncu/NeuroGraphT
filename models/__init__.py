@@ -9,7 +9,7 @@ from .transformer_module import (
     EpochTransformer
 )
 from .gcn_module import GCNClassifier
-from .epigraphnet import EpiGraphNet, CNNTransformerEncoder, GraphBuilder, GCNEncoder
+from .neurographt import NeuroGraphT, CNNTransformerEncoder, GraphBuilder, GCNEncoder
 from .baselines import BaselineCNNTransformer, Baseline1DCNNTransformer
 
 __all__ = [
@@ -27,7 +27,7 @@ __all__ = [
     # GCN
     "GCNClassifier",
     # Main Models
-    "EpiGraphNet",
+    "NeuroGraphT",
     "CNNTransformerEncoder",
     "GraphBuilder",
     "GCNEncoder",
