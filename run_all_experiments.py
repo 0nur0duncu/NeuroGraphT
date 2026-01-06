@@ -16,7 +16,6 @@ from models.baselines import BaselineCNNTransformer, Baseline1DCNNTransformer
 from models.neurographt import NeuroGraphT
 from data.dataset import SleepEDFDataset, load_sleep_edf_dataset
 from utils.training import train_one_epoch, validate
-from utils.focal_loss import FocalLoss
 
 # Deney konfigürasyonları
 EXPERIMENTS = [
@@ -155,28 +154,7 @@ def run_single_experiment(
     
     # Training setup
     training_config = config["training"]
-    
-    # Loss function selection
-    class_weights = None
-    if config.get("class_weights", {}).get("enabled", False):
-        weights = config["class_weights"].get("weights", [1.0] * num_classes)
-        class_weights = weights
-        if verbose and run_idx == 0:
-            print(f"  ⚖️  Class weights: {weights}")
-    
-    # Choose loss function
-    loss_fn = training_config.get("loss_function", "cross_entropy")
-    if loss_fn == "focal":
-        gamma = training_config.get("focal_gamma", 2.0)
-        criterion = FocalLoss(alpha=class_weights, gamma=gamma)
-        if verbose and run_idx == 0:
-            print(f"  🎯 Using Focal Loss (gamma={gamma})")
-    else:
-        weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device) if class_weights else None
-        criterion = nn.CrossEntropyLoss(weight=weights_tensor)
-        if verbose and run_idx == 0:
-            print(f"  📊 Using Cross-Entropy Loss")
-    
+    criterion = nn.CrossEntropyLoss()
     optimizer = AdamW(
         model.parameters(), 
         lr=training_config["learning_rate"], 
