@@ -1,8 +1,3 @@
-"""
-EpiGraphNet with Transformer - Sleep Stage Classification
-CNN-Transformer + Graph Neural Network architecture
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,8 +6,6 @@ import math
 
 
 class PositionalEncoding(nn.Module):
-    """Sinüzoidal Pozisyonel Kodlama."""
-    
     def __init__(self, d_model: int, max_len: int = 5000, dropout: float = 0.1):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
@@ -35,11 +28,7 @@ class PositionalEncoding(nn.Module):
 
 
 class CNNTransformerEncoder(nn.Module):
-    """
-    CNN + Transformer Encoder.
-    LSTM yerine Transformer kullanarak temporal bağımlılıkları yakalar.
-    """
-    
+
     def __init__(
         self,
         in_channels: int = 1,
@@ -87,12 +76,7 @@ class CNNTransformerEncoder(nn.Module):
         self.hidden_size = transformer_dim
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, 1, signal_length)
-        Returns:
-            H: Shape (batch, seq_len, transformer_dim)
-        """
+
         # CNN feature extraction
         x = self.cnn(x)
         x = self.adaptive_pool(x)
@@ -215,11 +199,6 @@ class GCNEncoder(nn.Module):
 
 
 class EpiGraphNet(nn.Module):
-    """
-    EpiGraphNet with Transformer for Sleep Stage Classification.
-    
-    CNN-Transformer + Graph Builder + GCN architecture.
-    """
     
     def __init__(
         self,
@@ -274,12 +253,7 @@ class EpiGraphNet(nn.Module):
         self.classifier = nn.Linear(gcn_hidden, num_classes)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, 1, signal_length)
-        Returns:
-            logits: Shape (batch, num_classes)
-        """
+        
         # CNN-Transformer encoding
         H = self.cnn_transformer(x)
         

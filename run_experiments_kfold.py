@@ -1,8 +1,3 @@
-"""
-Sleep Stage Classification K-Fold Cross Validation Experiments
-Sleep-EDF Dataset with CNN-Transformer + GCN Architecture
-"""
-
 import yaml
 import argparse
 import numpy as np
@@ -142,7 +137,16 @@ def run_single_fold(
     ).to(device)
     
     training_config = config["training"]
-    criterion = nn.CrossEntropyLoss()
+    
+    # Weighted Cross-Entropy Loss
+    class_weights = None
+    if config.get("class_weights", {}).get("enabled", False):
+        weights = config["class_weights"].get("weights", [1.0] * num_classes)
+        class_weights = torch.tensor(weights, dtype=torch.float32).to(device)
+        if verbose and fold_id == 1:
+            print(f"  ⚖️  Class weights enabled: {weights}")
+    
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = AdamW(
         model.parameters(), 
         lr=training_config["learning_rate"], 
@@ -193,10 +197,19 @@ def run_single_fold(
     if best_state is not None:
         model.load_state_dict(best_state)
     
-    test_metrics = validate(model, test_loader, criterion, device)
+    # Test with per-class F1 scores
+    class_names = ["W", "N1", "N2", "N3", "REM"]
+    test_metrics = validate(
+        model, test_loader, criterion, device, 
+        class_names=class_names, 
+        include_per_class=config.get("evaluation", {}).get("per_class_metrics", False)
+    )
     
     if verbose:
         tqdm.write(f"    Fold {fold_id} - Test Acc: {test_metrics['accuracy']:.2f}%, F1: {test_metrics['f1']:.2f}%")
+        if "per_class_f1" in test_metrics:
+            per_class_f1 = test_metrics["per_class_f1"]
+            tqdm.write(f"      Per-class F1: W={per_class_f1['W']:.1f}%, N1={per_class_f1['N1']:.1f}%, N2={per_class_f1['N2']:.1f}%, N3={per_class_f1['N3']:.1f}%, REM={per_class_f1['REM']:.1f}%")
     
     return test_metrics
 
@@ -260,7 +273,22 @@ def run_kfold_experiment(
     
     avg_results = {}
     for key in all_results[0].keys():
-        if key != "loss":
+        if key == "per_class_f1":
+            # Per-class F1 skorlarını ayrı işle
+            all_per_class = {}
+            for result in all_results:
+                for class_name, f1_score in result["per_class_f1"].items():
+                    if class_name not in all_per_class:
+                        all_per_class[class_name] = []
+                    all_per_class[class_name].append(f1_score)
+            
+            # Her sınıf için ortalama ve std hesapla
+            avg_results["per_class_f1"] = {}
+            avg_results["per_class_f1_std"] = {}
+            for class_name, scores in all_per_class.items():
+                avg_results["per_class_f1"][class_name] = np.mean(scores)
+                avg_results["per_class_f1_std"][class_name] = np.std(scores)
+        elif key != "loss":
             values = [r[key] for r in all_results]
             avg_results[key] = np.mean(values)
             avg_results[f"{key}_std"] = np.std(values)
@@ -271,6 +299,15 @@ def run_kfold_experiment(
     print(f"     Precision: {avg_results['precision']:.2f}% ± {avg_results['precision_std']:.2f}%")
     print(f"     Recall:    {avg_results['recall']:.2f}% ± {avg_results['recall_std']:.2f}%")
     print(f"     F1:        {avg_results['f1']:.2f}% ± {avg_results['f1_std']:.2f}%")
+    
+    # Print per-class F1 if available
+    if "per_class_f1" in avg_results:
+        print(f"\n  📈 Per-class F1 scores:")
+        for class_name in ["W", "N1", "N2", "N3", "REM"]:
+            if class_name in avg_results["per_class_f1"]:
+                mean_f1 = avg_results["per_class_f1"][class_name]
+                std_f1 = avg_results["per_class_f1_std"][class_name]
+                print(f"     {class_name:>5}: {mean_f1:.2f}% ± {std_f1:.2f}%")
     
     return avg_results
 

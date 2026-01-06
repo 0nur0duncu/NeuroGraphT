@@ -46,7 +46,9 @@ def validate(
     model: nn.Module,
     val_loader: DataLoader,
     criterion: nn.Module,
-    device: torch.device
+    device: torch.device,
+    class_names: list = None,
+    include_per_class: bool = False
 ) -> Dict[str, float]:
     model.eval()
     
@@ -67,7 +69,12 @@ def validate(
         all_labels.extend(batch_y.cpu().tolist())
     
     avg_loss = total_loss / len(val_loader.dataset)
-    metrics = calculate_all_metrics(all_labels, all_preds)
+    metrics = calculate_all_metrics(
+        all_labels, 
+        all_preds,
+        class_names=class_names,
+        include_per_class=include_per_class
+    )
     metrics["loss"] = avg_loss
     
     return metrics

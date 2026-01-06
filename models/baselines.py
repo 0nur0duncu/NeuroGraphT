@@ -1,8 +1,3 @@
-"""
-Baseline Models for Sleep Stage Classification
-CNN-Transformer architecture (replacing LSTM)
-"""
-
 import torch
 import torch.nn as nn
 import math
@@ -10,7 +5,7 @@ from typing import List
 
 
 class PositionalEncoding(nn.Module):
-    """Sinüzoidal Pozisyonel Kodlama."""
+    # Sinüzoidal Pozisyonel Kodlama.
     
     def __init__(self, d_model: int, max_len: int = 5000, dropout: float = 0.1):
         super().__init__()
@@ -34,11 +29,7 @@ class PositionalEncoding(nn.Module):
 
 
 class BaselineCNNTransformer(nn.Module):
-    """
-    Baseline CNN-Transformer Model.
-    CNN ile özellik çıkarımı + Transformer encoding.
-    """
-    
+
     def __init__(
         self,
         in_channels: int = 1,
@@ -109,11 +100,7 @@ class BaselineCNNTransformer(nn.Module):
 
 
 class Baseline1DCNNTransformer(nn.Module):
-    """
-    Daha derin 1D CNN-Transformer Model.
-    Daha fazla CNN katmanı + Transformer.
-    """
-    
+
     def __init__(
         self,
         in_channels: int = 1,
@@ -181,8 +168,3 @@ class Baseline1DCNNTransformer(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
         return x
-
-
-# Backward compatibility için alias'lar
-BaselineCNNLSTM = BaselineCNNTransformer
-Baseline1DCNNLSTM = Baseline1DCNNTransformer

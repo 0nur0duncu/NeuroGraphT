@@ -1,8 +1,3 @@
-"""
-Sleep-EDF Dataset Module
-Uyku evresi sınıflandırması için veri yükleme ve DataLoader oluşturma
-"""
-
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -21,20 +16,13 @@ from .download import ensure_dataset
 
 
 class SleepEDFDataset(Dataset):
-    """Sleep-EDF Dataset için PyTorch Dataset sınıfı."""
-    
+
     def __init__(
         self,
         signals: np.ndarray,
         labels: np.ndarray,
         transform: Optional[callable] = None
     ):
-        """
-        Args:
-            signals: Shape (N, 1, T) - epoch'lar
-            labels: Shape (N,) - uyku evreleri (0-4)
-            transform: Opsiyonel dönüşüm fonksiyonu
-        """
         self.signals = torch.FloatTensor(signals)
         self.labels = torch.LongTensor(labels)
         self.transform = transform
@@ -60,26 +48,9 @@ def load_sleep_edf_dataset(
     normalize: bool = True,
     verbose: bool = True
 ) -> Tuple[np.ndarray, np.ndarray, List[int]]:
-    """
-    Sleep-EDF veri setini yükle.
-    
-    Args:
-        data_dir: Veri dizini (veya None ise otomatik indirir)
-        study: 'SC' (Sleep Cassette) veya 'ST' (Sleep Telemetry)
-        channel: EEG kanalı ('EEG Fpz-Cz' veya 'EEG Pz-Oz')
-        max_subjects: Maksimum özne sayısı (None = tümü)
-        normalize: Z-score normalizasyonu uygula
-        verbose: İlerleme göster
-    
-    Returns:
-        signals: Shape (N, 1, T)
-        labels: Shape (N,)
-        subject_indices: Her epoch'un hangi özneye ait olduğu
-    """
-    # Veri setini indir (yoksa)
+
     data_path = ensure_dataset(data_dir, study=study, verbose=verbose)
     
-    # Dosya çiftlerini bul
     file_pairs = get_subject_files(str(data_path), study=study)
     
     if len(file_pairs) == 0:
@@ -142,26 +113,7 @@ def create_data_loaders(
     num_workers: int = 0,
     verbose: bool = True
 ) -> Dict[str, DataLoader]:
-    """
-    Train/Val/Test DataLoader'ları oluştur.
     
-    Args:
-        data_dir: Veri dizini
-        batch_size: Batch boyutu
-        train_ratio: Eğitim seti oranı
-        val_ratio: Doğrulama seti oranı
-        study: SC veya ST
-        channel: EEG kanalı
-        max_subjects: Maksimum özne sayısı
-        normalize: Normalizasyon uygula
-        random_seed: Rastgele tohum
-        num_workers: DataLoader worker sayısı
-        verbose: İlerleme göster
-    
-    Returns:
-        Dict with 'train', 'val', 'test' DataLoader'ları
-    """
-    # Veri setini yükle
     signals, labels, _ = load_sleep_edf_dataset(
         data_dir=data_dir,
         study=study,
@@ -173,7 +125,6 @@ def create_data_loaders(
     
     test_ratio = 1.0 - train_ratio - val_ratio
     
-    # Stratified split
     X_train, X_temp, y_train, y_temp = train_test_split(
         signals, labels,
         test_size=(val_ratio + test_ratio),
@@ -189,7 +140,6 @@ def create_data_loaders(
         stratify=y_temp
     )
     
-    # Dataset'leri oluştur
     train_dataset = SleepEDFDataset(X_train, y_train)
     val_dataset = SleepEDFDataset(X_val, y_val)
     test_dataset = SleepEDFDataset(X_test, y_test)
@@ -238,11 +188,7 @@ def create_subject_split_loaders(
     num_workers: int = 0,
     verbose: bool = True
 ) -> Dict[str, DataLoader]:
-    """
-    Özne bazlı bölme ile DataLoader'ları oluştur.
-    (Daha gerçekçi değerlendirme için önerilen yöntem)
-    """
-    # Veri setini yükle
+
     signals, labels, subject_indices = load_sleep_edf_dataset(
         data_dir=data_dir,
         study=study,

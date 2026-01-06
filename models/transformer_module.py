@@ -1,8 +1,3 @@
-"""
-Transformer Encoder Module for Sleep Stage Classification
-SleepTransformer benzeri mimari - tek kanallı EEG için
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,7 +6,6 @@ from typing import Optional, Tuple
 
 
 class PositionalEncoding(nn.Module):
-    """Sinüzoidal Pozisyonel Kodlama."""
     
     def __init__(
         self,
@@ -36,19 +30,11 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, seq_len, d_model)
-        Returns:
-            Shape (batch, seq_len, d_model)
-        """
         x = x + self.pe[:, :x.size(1), :]
         return self.dropout(x)
 
 
 class MultiHeadSelfAttention(nn.Module):
-    """Multi-Head Self Attention mekanizması."""
-    
     def __init__(
         self,
         d_model: int,
@@ -75,13 +61,6 @@ class MultiHeadSelfAttention(nn.Module):
         x: torch.Tensor,
         mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, seq_len, d_model)
-            mask: Optional attention mask
-        Returns:
-            Shape (batch, seq_len, d_model)
-        """
         batch_size, seq_len, _ = x.shape
         
         # Q, K, V hesapla
@@ -109,7 +88,6 @@ class MultiHeadSelfAttention(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
-    """Tek bir Transformer Encoder katmanı."""
     
     def __init__(
         self,
@@ -139,12 +117,7 @@ class TransformerEncoderLayer(nn.Module):
         x: torch.Tensor,
         mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, seq_len, d_model)
-        Returns:
-            Shape (batch, seq_len, d_model)
-        """
+
         # Self-attention with residual connection
         attn_output = self.self_attention(x, mask)
         x = self.norm1(x + self.dropout(attn_output))
@@ -157,10 +130,6 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    """
-    Transformer Encoder - EEG sinyalleri için.
-    CNN ile özellik çıkarımı + Transformer encoding.
-    """
     
     def __init__(
         self,
@@ -190,12 +159,7 @@ class TransformerEncoder(nn.Module):
         x: torch.Tensor,
         mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, seq_len, input_size)
-        Returns:
-            Shape (batch, seq_len, d_model)
-        """
+
         # Giriş projeksiyonu
         x = self.input_projection(x)
         
@@ -213,10 +177,6 @@ class TransformerEncoder(nn.Module):
 
 
 class CNNFeatureExtractor(nn.Module):
-    """
-    1D CNN ile EEG sinyalinden özellik çıkarımı.
-    Transformer'a beslenecek temporal özellikleri çıkarır.
-    """
     
     def __init__(
         self,
@@ -247,23 +207,13 @@ class CNNFeatureExtractor(nn.Module):
         self.out_channels = hidden_channels[-1]
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, 1, signal_length)
-        Returns:
-            Shape (batch, seq_len, hidden_channels)
-        """
         x = self.cnn(x)  # (batch, channels, seq_len)
         x = x.permute(0, 2, 1)  # (batch, seq_len, channels)
         return x
 
 
 class SleepTransformerEncoder(nn.Module):
-    """
-    Uyku Evresi Sınıflandırması için CNN + Transformer Encoder.
-    DeepSleepNet/SleepTransformer benzeri mimari.
-    """
-    
+
     def __init__(
         self,
         in_channels: int = 1,
@@ -298,12 +248,7 @@ class SleepTransformerEncoder(nn.Module):
         self.hidden_size = d_model
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, 1, signal_length)
-        Returns:
-            H: Shape (batch, seq_len, d_model)
-        """
+
         # CNN özellik çıkarımı
         cnn_features = self.cnn(x)
         
@@ -317,10 +262,6 @@ class SleepTransformerEncoder(nn.Module):
 
 
 class EpochTransformer(nn.Module):
-    """
-    Tek epoch (30s) sınıflandırması için tam model.
-    CNN + Transformer + Classifier
-    """
     
     def __init__(
         self,
@@ -352,7 +293,7 @@ class EpochTransformer(nn.Module):
             dropout=dropout
         )
         
-        # CLS token (isteğe bağlı)
+        # CLS token
         if pooling == 'cls':
             self.cls_token = nn.Parameter(torch.randn(1, 1, d_model))
         
@@ -364,12 +305,7 @@ class EpochTransformer(nn.Module):
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Shape (batch, 1, signal_length)
-        Returns:
-            logits: Shape (batch, num_classes)
-        """
+
         # Encoding
         H = self.encoder(x)  # (batch, seq_len, d_model)
         

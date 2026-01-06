@@ -1,8 +1,3 @@
-"""
-Sleep Stage Classification Experiments
-Sleep-EDF Dataset with CNN-Transformer + GCN Architecture
-"""
-
 import yaml
 import argparse
 import numpy as np
@@ -289,7 +284,6 @@ def main():
     
     config = load_config(args.config)
     
-    # Override config with command line arguments
     if args.data_dir:
         config["data"]["data_dir"] = args.data_dir
     if args.max_subjects:
@@ -344,7 +338,6 @@ def main():
         
         all_results["experiments"][model_name] = results
     
-    # Sonuçları kaydet
     with open(args.output, 'w', encoding='utf-8') as f:
         json.dump(all_results, f, indent=2, ensure_ascii=False)
     
