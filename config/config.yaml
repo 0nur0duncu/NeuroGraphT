@@ -67,8 +67,9 @@ training:
 class_weights:
   enabled: true  # Dengesiz veri için aktif edildi
   # Sleep stage class weights (W, N1, N2, N3, REM)
-  # W: 67.4%, N1: 3.6%, N2: 17.4%, N3: 4.6%, REM: 6.9%
-  weights: [1.0, 15.0, 4.0, 12.0, 8.0]  # N1 ve N3'e yüksek ağırlık
+  # W: 69.0%, N1: 4.7%, N2: 16.6%, N3: 3.3%, REM: 6.4%
+  # N1 ve N3 çok az olduğu için agresif weight'ler kullanıldı
+  weights: [1.0, 25.0, 5.0, 20.0, 10.0]  # N1: 25x, N3: 20x ağırlık
 
 evaluation:
   num_runs: 5
