@@ -1,28 +1,16 @@
-# PyTorch and Deep Learning
 torch
 torchvision
-
-# EEG Processing
 mne
 pyedflib
 boto3
-
-# Data Processing
 numpy
 pandas
 scipy
-
-# Machine Learning
 scikit-learn
-
-# Visualization
 matplotlib
 seaborn
 tqdm
 tabulate
-
-# Configuration
 pyyaml
-
-# Logging
 tensorboard
+pyyaml

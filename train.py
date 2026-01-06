@@ -8,20 +8,33 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 import os
+import yaml
 from datetime import datetime
 
 
+def load_config(config_path):
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+
 def main():
-    data_path = "dataset/sleep-edfx"
+    config = load_config('config/config.yaml')
+    
+    data_config = config['data']
+    train_config = config['training']
+    class_weights_config = config['class_weights']
     
     signals, labels, _ = load_sleep_edf_dataset(
-        data_dir=data_path,
-        max_subjects=None,
+        data_dir=data_config['data_dir'],
+        max_subjects=data_config['max_subjects'],
         verbose=True
     )
 
     X_train, X_test, y_train, y_test = train_test_split(
-        signals, labels, test_size=0.3, random_state=42, stratify=labels
+        signals, labels, 
+        test_size=data_config['test_ratio'], 
+        random_state=data_config['random_seed'], 
+        stratify=labels
     )
 
     stage_names = ['W', 'N1', 'N2', 'N3', 'REM']
@@ -31,19 +44,23 @@ def main():
     for i, (stage, count) in enumerate(zip(stage_names, class_counts)):
         print(f"  {stage}: {count:>5} ({count/len(y_train)*100:>5.1f}%)")
 
-    class_weights = torch.FloatTensor([1.0, 15.0, 4.0, 20.0, 12.0])
+    class_weights = torch.FloatTensor(class_weights_config['weights']) if class_weights_config['enabled'] else None
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = NeuroGraphT(num_classes=5).to(device)
+    model = NeuroGraphT(num_classes=data_config['num_classes']).to(device)
 
-    criterion = torch.nn.CrossEntropyLoss(weight=class_weights.to(device))
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
+    if class_weights is not None:
+        criterion = torch.nn.CrossEntropyLoss(weight=class_weights.to(device))
+    else:
+        criterion = torch.nn.CrossEntropyLoss()
+    
+    optimizer = torch.optim.Adam(model.parameters(), lr=train_config['learning_rate'])
 
     print(f"\nModel eğitiliyor ({device})...")
-    train_loader = DataLoader(SleepEDFDataset(X_train, y_train), batch_size=64, shuffle=True)
+    train_loader = DataLoader(SleepEDFDataset(X_train, y_train), batch_size=train_config['batch_size'], shuffle=True)
     model.train()
 
-    num_epochs = 20
+    num_epochs = train_config['num_epochs']
     for epoch in range(num_epochs):
         epoch_loss = 0
         for batch_x, batch_y in train_loader:
