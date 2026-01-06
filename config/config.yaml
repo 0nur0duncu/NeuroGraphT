@@ -73,12 +73,11 @@ class_weights:
   # Sleep stage class weights (W, N1, N2, N3, REM)
   # W: 69.0%, N1: 4.7%, N2: 16.6%, N3: 3.3%, REM: 6.4%
   # 
-  # Sorun: REM ve N1 sınıfları eziliyor!
-  # - REM'lerin %57.5'i N2 olarak tahmin ediliyor
-  # - N1'lerin %52.9'u N2 olarak tahmin ediliyor
-  #
-  # Strateji: N2 weight'ini azalt, REM ve N1'i daha da artır
-  weights: [1.0, 30.0, 3.0, 20.0, 15.0]  # N1: 30x, REM: 15x, N2: 3x (azaltıldı!)
+  # Muhafazakar yaklaşım: Aşırı agresif weight'ler (30x) model bozdu
+  # Her şeyi N1 olarak tahmin etti (accuracy %15'e düştü!)
+  # 
+  # Yeni strateji: Kademeli weight artırımı
+  weights: [1.0, 5.0, 2.0, 7.0, 4.0]  # N1: 5x, N3: 7x (muhafazakar)
 
 evaluation:
   num_runs: 5
